@@ -1,0 +1,10 @@
+# 忽略所有文件  
+*  
+!*/  
+# 只保留 JSON 文件  
+!*.json  
+# 保留必要的配置文件  
+!.gitignore  
+!README.md  
+!requirements.txt  
+!main.py  
