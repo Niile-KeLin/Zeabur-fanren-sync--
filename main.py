@@ -111,7 +111,8 @@ logger = logging.getLogger("app")
 # --- 配置 ---
 # 优先读取大写 SYNC_PASSWORD，兼容小写 sync_password
 sync_password = os.getenv("SYNC_PASSWORD") or os.getenv("sync_password")
-data_dir = os.path.join(os.path.dirname(__file__), "data")
+# 使用环境变量指定的数据目录，默认为当前目录下的 data 文件夹
+data_dir = os.getenv("DATA_DIR", os.path.join(os.path.dirname(__file__), "data"))
 
 
 @asynccontextmanager
@@ -340,9 +341,22 @@ if __name__ == "__main__":
     if not sync_password:
         print("错误: 环境变量 SYNC_PASSWORD 未设置。")
         print("请在项目根目录创建一个 .env 文件并设置 SYNC_PASSWORD。")
+        sys.exit(1)
     else:
         host = "0.0.0.0"
-        port = 8000
+        # 从环境变量获取端口，Zeabur 会设置这个变量
+        port = int(os.getenv("PORT", 8000))
         print_banner(host, port, app.version, data_dir)
-        # 使用自定义日志配置启动
-        uvicorn.run(app, host=host, port=port, log_config=LOGGING_CONFIG)
+        
+        # 判断是否为生产环境（Zeabur 可能会设置环境变量）
+        environment = os.getenv("ENVIRONMENT", "production")
+        
+        if environment == "production":
+            # 生产环境：使用默认日志配置，避免自定义过滤器可能的问题
+            uvicorn.run(app, host=host, port=port)
+        else:
+            # 开发环境：使用自定义日志配置
+            uvicorn.run(app, host=host, port=port, log_config=LOGGING_CONFIG)
+
+# 为 Zeabur 等平台提供标准入口
+app_instance = app
